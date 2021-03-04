@@ -24,6 +24,8 @@
 
 - `mongooes`——操作 mongodb 的对象模型工具
 
+- `dotenv` —— 从文件加载环境变量
+
 
 
 - `nodemon` —— 自动重启
