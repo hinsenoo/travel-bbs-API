@@ -43,8 +43,11 @@ class UsersCtl {
             // user.userArticleCount = userArticleCount;
         if (!user) { ctx.throw(404, '用户不存在'); }
         const userArticles = await Article.find({ writer: ctx.params.id });
+        // 粉丝列表
+        const followers = await User.find({ following: ctx.params.id });
         let newUser = JSON.parse(JSON.stringify(user));
         newUser.articleCount = userArticles.length;
+        newUser.followers = followers;
         ctx.body = ctx.body = { 
             status: 0,
             data: newUser,
