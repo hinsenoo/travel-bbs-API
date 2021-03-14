@@ -12,6 +12,7 @@ const articlesSchema = new Schema({
     place: { type: String, required: false },
     articleHTML: { type: String, required: true },
     pageViews: { type: Number, required: true, default: 0 }, // 阅读量
+    likeCount: { type: Number, required: true, default: 0 }, // 投票数
     // topics: {
     //     type: [{ type: Schema.Types.ObjectId, ref: 'Topic' }],
     //     select: false,

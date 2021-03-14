@@ -35,19 +35,28 @@ class UsersCtl {
         // console.log(fields, selectFields);
         const user = await User
             .findById(ctx.params.id)
-            .select('+following').populate('following');
+            .select('+following +likingArticles +collectingArticles').populate('following likingArticles collectingArticles');
+            // ('+likingArticles').populate('likingArticles');
         // const user = await User
         //     .findById(ctx.params.id)
         //     .select(selectFields)
             // .populate(populateStr);
             // user.userArticleCount = userArticleCount;
         if (!user) { ctx.throw(404, '用户不存在'); }
+        let likeCount = 0;
+        let articlesReadCount = 0;
         const userArticles = await Article.find({ writer: ctx.params.id });
+        userArticles.forEach(item => {
+            likeCount += item.likeCount;
+            articlesReadCount += item.pageViews;
+        })
         // 粉丝列表
         const followers = await User.find({ following: ctx.params.id });
         let newUser = JSON.parse(JSON.stringify(user));
         newUser.articleCount = userArticles.length;
         newUser.followers = followers;
+        newUser.likeCount = likeCount;
+        newUser.articlesReadCount = articlesReadCount;
         ctx.body = ctx.body = { 
             status: 0,
             data: newUser,
@@ -172,7 +181,7 @@ class UsersCtl {
             data: user,
          };
     }
-    // 14. 问题列表
+    // 14. 文章列表
     async listArticles(ctx) {
         const articles = await Article.find({ writer: ctx.params.id }).populate('writer');
         ctx.body = {
@@ -234,6 +243,94 @@ class UsersCtl {
         if (index > -1) {
             // 移除指定的参数
             me.following.splice(index, 1);
+            me.save();
+        }
+        ctx.body = {
+            status: 0,
+            data: 'ok',
+        };
+    }
+
+    // 15、赞文章列表
+    async listLikingArticles(ctx) {
+        const user = await User.findById(ctx.params.id).select('+likingArticles').populate('likingArticles');
+        if (!user) { ctx.throw(404, '用户不存在'); }
+        ctx.body = {
+            status: 0,
+            data: user.likingArticles,
+        }
+    }
+    // 16、点赞文章
+    async likeArticle(ctx, next) {
+        const me = await User.findById(ctx.state.user._id).select('+likingArticles');
+        // 防止重复
+        if (!me.likingArticles.map(id => id.toString()).includes(ctx.params.id)) {
+            me.likingArticles.push(ctx.params.id);
+            me.save();
+            // 操作符 inc：用于增加减少删除
+            await Article.findByIdAndUpdate(ctx.params.id, { $inc: { likeCount: 1 }});
+        }
+        ctx.body = {
+            status: 0,
+            data: 'ok',
+        };
+        await next();
+    }
+    // 17、取消赞某个文章
+    async unlikeArticle(ctx) {
+        const me = await User.findById(ctx.state.user._id).select('+likingArticles');
+        // 获取文章在列表中的索引
+        const index = me.likingArticles.map(id => id.toString()).indexOf(ctx.params.id);
+        // 判断是否存在
+        if (index > -1) {
+            me.likingArticles.splice(index, 1);
+            me.save();
+            await Article.findByIdAndUpdate(ctx.params.id, { $inc: { likeCount: -1 }});
+        }
+        ctx.body = {
+            status: 0,
+            data: 'ok',
+        };
+    }
+
+    // 21、收藏文章列表
+    async listCollectingArticles(ctx) {
+        const user = await User.findById(ctx.params.id).select('+collectingArticles').populate('collectingArticles');
+        if (!user) { ctx.throw(404, '用户不存在'); }
+        let newList = [];
+        let list = user.collectingArticles;
+        for (let index = 0; index < list.length; index++) {
+            let obj = JSON.parse(JSON.stringify(list[index]));
+            obj.writerInfo = await User.findById(list[index].writer);
+            newList.push(obj);
+        }
+        ctx.body = {
+            status: 0,
+            data: newList,
+        }
+    }
+    // 22、收藏文章
+    async collectArticle(ctx, next) {
+        const me = await User.findById(ctx.state.user._id).select('+collectingArticles');
+        // 防止重复
+        if (!me.collectingArticles.map(id => id.toString()).includes(ctx.params.id)) {
+            me.collectingArticles.push(ctx.params.id);
+            me.save();
+        }
+        ctx.body = {
+            status: 0,
+            data: 'ok',
+        };
+        await next();
+    }
+    // 23、取消收藏某个文章
+    async uncollectArticle(ctx) {
+        const me = await User.findById(ctx.state.user._id).select('+collectingArticles');
+        // 获取文章在列表中的索引
+        const index = me.collectingArticles.map(id => id.toString()).indexOf(ctx.params.id);
+        // 判断是否存在
+        if (index > -1) {
+            me.collectingArticles.splice(index, 1);
             me.save();
         }
         ctx.body = {

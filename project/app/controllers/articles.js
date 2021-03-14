@@ -20,7 +20,7 @@ class ArticleCtl {
             data: article
         }
     }
-    // 检查问题是否存在 中间件
+    // 检查文章是否存在 中间件
     async checkArticleExist(ctx, next) {
         const article = await Article.findById(ctx.params.id);
         if (!article) { ctx.throw(404, '文章不存在'); }
