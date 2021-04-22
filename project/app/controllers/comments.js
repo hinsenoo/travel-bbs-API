@@ -1,4 +1,5 @@
 const Comment = require('../models/comments'); 
+const Article = require('../models/articles'); 
 
 class CommentCtl {
     async find(ctx) {
@@ -65,6 +66,12 @@ class CommentCtl {
         };
     }
     async checkCommentator(ctx, next) {
+        const { articleId } = ctx.params;
+        const article = await Article.findById(articleId);
+        if(article.writer.toString() === ctx.state.user._id) {
+            await next();
+            return;
+        }
         const { comment } = ctx.state;
         if (comment.commentator.toString() !== ctx.state.user._id ) {
             ctx.throw(403, '没有权限');
