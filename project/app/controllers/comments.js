@@ -59,7 +59,6 @@ class CommentCtl {
         const commentator = ctx.state.user._id;
         const { articleId } = ctx.params;
         const comment = await new Comment({ ...ctx.request.body, commentator, articleId }).save();
-        console.log(comment);
         ctx.body = {
             status: 0,
             data: comment,

@@ -1,4 +1,6 @@
-const Article = require('../models/articles'); 
+const Article = require('../models/articles');
+const Comment = require('../models/comments'); 
+
 
 class ArticleCtl {
     async find(ctx) {
@@ -15,6 +17,17 @@ class ArticleCtl {
         const article = await Article
             .find({ $or: [ { title: q }, { description: q } ] }).sort({ [sort]: desc }).populate('writer')
             .limit(perPage).skip(page * perPage);
+        let newData = [];
+        article.forEach(async item => {
+            const comment = await Comment
+            .find({ articleId: item._id});
+            // console.log(comment.length);
+            item.commentCount = comment.length;
+            let newItem = JSON.parse(JSON.stringify(item));
+            newItem.commentCount = comment.length;
+            newData.push(newItem);
+        })
+
         ctx.body = {
             status: 0,
             data: article

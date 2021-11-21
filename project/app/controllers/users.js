@@ -126,13 +126,11 @@ class UsersCtl {
             oldPassword: { type: 'string' },
             newPassword: { type: 'string' },
         });
-        console.log(ctx.request.body);
 
         let { oldPassword, newPassword} = ctx.request.body;
         const user = await User
             .findById(ctx.params.id).select('password');
         if (!user) { ctx.throw(404, '用户不存在'); }
-        console.log(user.password);
         if(user.password !== oldPassword) {
             ctx.body = {
                 status: 1,
